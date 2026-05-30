@@ -75,5 +75,30 @@ python3 mac/vtt.py --file movie.mp4
 取得できないサイト（DRM・未対応）は、**ブラウザで再生しながら録音モード**（引数なしの
 `python3 mac/vtt.py`）で取り込めば、サイトを問わず文字起こしできる。
 
+## mac/slides.py — 映像からスライドを抽出してOCR
+
+動画の「画面が切り替わった瞬間」のフレームを自動抽出し、各スライド画像を
+クラウドのビジョンAI（OpenAI GPT-4o）に渡して、書かれている文字・図表の要点を
+テキスト化する。音声の文字起こし（`vtt.py`）と組み合わせると、聞かなくても／見なくても
+内容が手元に残る。
+
+```bash
+export OPENAI_API_KEY=sk-...
+python3 mac/slides.py --url "https://youtu.be/AStsuPUxZjI"   # URLから
+python3 mac/slides.py --file talk.mp4                         # ローカル動画から
+
+# 主なオプション
+#   --scene-threshold 0.3         シーン変化の感度（小さいほど多く抽出）
+#   --every 30                    シーン検出でなく30秒ごとに抽出
+#   --model gpt-4o-mini           安価なモデルに変更
+#   --cookies-from-browser chrome ログイン必須/有料コンテンツ用
+```
+
+出力は `slides_YYYYmmdd_HHMMSS/` に、スライド画像（`slide_*.jpg`）と書き起こし
+（`slides.md`：各スライドのタイムスタンプ＋抽出テキスト）。
+
+> 注: スライドが少ししか抽出されない時は `--scene-threshold 0.2` に下げる、逆に多すぎる
+> 時は上げる。喋りっぱなしで画面変化が乏しい動画は `--every 30` で一定間隔抽出に。
+
 `Ctrl+C` で録音を停止すると、その場でまとめて文字起こしし、入力と同じ名前の
 `recording_*.txt`（本文）と `recording_*.srt`（字幕）を書き出す。
