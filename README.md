@@ -46,17 +46,34 @@ python3 mac/vtt.py              # 録音開始 → 対象を再生 → Ctrl+C �
 # 完全ローカル（オフライン・無料）で動かす場合
 python3 mac/vtt.py --engine fasterwhisper --model-size medium
 
-# YouTube等のURLから直接（録音もBlackHoleも不要・推奨）
+# URLから直接（YouTube/Voicy/NewsPicks等・録音もBlackHoleも不要・推奨）
 python3 mac/vtt.py --url "https://youtu.be/AStsuPUxZjI"
+
+# ログイン必須/有料コンテンツ（Voicyプレミアム・NewsPicks有料 等）はブラウザのcookieを使う
+python3 mac/vtt.py --url "https://voicy.jp/..." --cookies-from-browser chrome
 
 # 録音せず既存ファイルを文字起こし
 python3 mac/vtt.py --file movie.mp4
 
 # 主なオプション
-#   --language ja|en|auto   言語（既定 ja、auto で自動判定）
-#   --url URL               YouTube等から音声を取得して文字起こし（要 yt-dlp）
-#   --file PATH             既存の音声/動画ファイルを文字起こし
+#   --language ja|en|auto         言語（既定 ja、auto で自動判定）
+#   --url URL                     URLから音声取得して文字起こし（要 yt-dlp）
+#   --cookies-from-browser NAME   ログイン必須コンテンツ用 (chrome/safari/firefox)
+#   --file PATH                   既存の音声/動画ファイルを文字起こし
 ```
+
+### URLの扱い（自動判定）
+
+`--url` は yt-dlp（1800以上のサイト対応）に渡すだけなので、**サイトごとの個別設定は不要**。
+
+| サイト | 取得 | 備考 |
+|---|---|---|
+| YouTube | ✅ | そのまま取得 |
+| Voicy | ✅ | 有料回は `--cookies-from-browser` でログイン情報を渡す |
+| NewsPicks | ⚠️ | 取得できる場合あり。長尺が途中で切れる/有料でDRMの場合は録音モードへ |
+
+取得できないサイト（DRM・未対応）は、**ブラウザで再生しながら録音モード**（引数なしの
+`python3 mac/vtt.py`）で取り込めば、サイトを問わず文字起こしできる。
 
 `Ctrl+C` で録音を停止すると、その場でまとめて文字起こしし、入力と同じ名前の
 `recording_*.txt`（本文）と `recording_*.srt`（字幕）を書き出す。

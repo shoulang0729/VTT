@@ -76,20 +76,29 @@ def record_system_audio(device_index: str) -> Path:
     return wav
 
 
-def download_url_audio(url: str) -> Path:
-    """yt-dlp で URL から音声だけを取得し、そのファイルパスを返す。"""
+def download_url_audio(url: str, cookies_browser: str | None) -> Path:
+    """yt-dlp で URL から音声だけを取得し、そのファイルパスを返す。
+
+    yt-dlp は YouTube / Voicy / NewsPicks など1800以上のサイトに対応。対応サイトなら
+    サイトを問わずこの1経路で処理できる（=「URLで判断」）。取得できない場合は録音モードを案内。
+    """
     if shutil.which("yt-dlp") is None:
         die("`yt-dlp` が見つかりません。`brew install yt-dlp` を実行してください。")
     base = f"yt_{datetime.now():%Y%m%d_%H%M%S}"
+    cmd = ["yt-dlp", "-x", "--audio-format", "mp3", "-o", base + ".%(ext)s"]
+    if cookies_browser:
+        # 有料・ログイン必須コンテンツ（Voicyプレミアム/NewsPicks有料 等）をブラウザのログインで取得
+        cmd += ["--cookies-from-browser", cookies_browser]
+    cmd.append(url)
     print(f"[VTT] 音声をダウンロード中… {url}")
-    rc = subprocess.run(
-        ["yt-dlp", "-x", "--audio-format", "mp3", "-o", base + ".%(ext)s", url]
-    ).returncode
-    if rc != 0:
-        die("音声のダウンロードに失敗しました。URL を確認してください。")
+    if subprocess.run(cmd).returncode != 0:
+        die("このURLからは音声を直接取得できませんでした（未対応サイト/ログイン必須/DRM など）。\n"
+            "  対処1: ログインが必要なら  --cookies-from-browser chrome  を付けて再実行\n"
+            "  対処2: それでも無理なら、ブラウザで再生しながら録音モードで取り込む:\n"
+            "         python3 mac/vtt.py        （対象の音だけ鳴らし、通知はミュート）")
     media = Path(base + ".mp3")
     if not media.exists():
-        die("ダウンロードしたファイルが見つかりません。")
+        die("ダウンロードは成功しましたが音声ファイルが見つかりません。")
     return media
 
 
@@ -122,7 +131,10 @@ def transcribe(media: Path, args: argparse.Namespace) -> None:
 def main() -> None:
     p = argparse.ArgumentParser(description="Macのシステム音声を録音してBuzzで一括文字起こし")
     p.add_argument("--file", default=None, help="録音せず、既存の音声/動画ファイルを文字起こし")
-    p.add_argument("--url", default=None, help="YouTube等のURLから音声を取得して文字起こし（録音不要）")
+    p.add_argument("--url", default=None,
+                   help="URLから音声を取得して文字起こし（YouTube/Voicy/NewsPicks等・録音不要）")
+    p.add_argument("--cookies-from-browser", default=None, metavar="BROWSER",
+                   help="ログイン必須/有料コンテンツ用。例: chrome / safari / firefox")
     p.add_argument("--engine", default="openaiapi",
                    choices=["openaiapi", "fasterwhisper", "whispercpp", "whisper", "huggingface"],
                    help="文字起こしエンジン (既定: openaiapi=高精度クラウド)")
@@ -137,7 +149,7 @@ def main() -> None:
             die(f"`{tool}` が見つかりません。`bash mac/setup.sh` を実行してください。")
 
     if args.url:
-        media = download_url_audio(args.url)
+        media = download_url_audio(args.url, args.cookies_from_browser)
     elif args.file:
         media = Path(args.file)
         if not media.exists():
