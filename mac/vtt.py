@@ -7,6 +7,7 @@
 
 使い方:
   python3 mac/vtt.py                 # 録音開始 → 再生 → Ctrl+C で停止＆文字起こし
+  python3 mac/vtt.py --url URL       # YouTube等のURLから音声を取得して文字起こし（録音不要）
   python3 mac/vtt.py --file foo.mp4  # 既存の音声/動画ファイルをそのまま文字起こし
 
 前提: ffmpeg / buzz / blackhole-2ch をインストールし、複数出力装置を設定済みであること
@@ -75,6 +76,23 @@ def record_system_audio(device_index: str) -> Path:
     return wav
 
 
+def download_url_audio(url: str) -> Path:
+    """yt-dlp で URL から音声だけを取得し、そのファイルパスを返す。"""
+    if shutil.which("yt-dlp") is None:
+        die("`yt-dlp` が見つかりません。`brew install yt-dlp` を実行してください。")
+    base = f"yt_{datetime.now():%Y%m%d_%H%M%S}"
+    print(f"[VTT] 音声をダウンロード中… {url}")
+    rc = subprocess.run(
+        ["yt-dlp", "-x", "--audio-format", "mp3", "-o", base + ".%(ext)s", url]
+    ).returncode
+    if rc != 0:
+        die("音声のダウンロードに失敗しました。URL を確認してください。")
+    media = Path(base + ".mp3")
+    if not media.exists():
+        die("ダウンロードしたファイルが見つかりません。")
+    return media
+
+
 def transcribe(media: Path, args: argparse.Namespace) -> None:
     cmd = ["buzz", "add", "--task", "transcribe",
            "--model-type", args.engine, "--txt", "--srt", "--hide-gui"]
@@ -104,6 +122,7 @@ def transcribe(media: Path, args: argparse.Namespace) -> None:
 def main() -> None:
     p = argparse.ArgumentParser(description="Macのシステム音声を録音してBuzzで一括文字起こし")
     p.add_argument("--file", default=None, help="録音せず、既存の音声/動画ファイルを文字起こし")
+    p.add_argument("--url", default=None, help="YouTube等のURLから音声を取得して文字起こし（録音不要）")
     p.add_argument("--engine", default="openaiapi",
                    choices=["openaiapi", "fasterwhisper", "whispercpp", "whisper", "huggingface"],
                    help="文字起こしエンジン (既定: openaiapi=高精度クラウド)")
@@ -117,7 +136,9 @@ def main() -> None:
         if shutil.which(tool) is None:
             die(f"`{tool}` が見つかりません。`bash mac/setup.sh` を実行してください。")
 
-    if args.file:
+    if args.url:
+        media = download_url_audio(args.url)
+    elif args.file:
         media = Path(args.file)
         if not media.exists():
             die(f"ファイルが見つかりません: {media}")

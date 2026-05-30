@@ -46,11 +46,15 @@ python3 mac/vtt.py              # 録音開始 → 対象を再生 → Ctrl+C �
 # 完全ローカル（オフライン・無料）で動かす場合
 python3 mac/vtt.py --engine fasterwhisper --model-size medium
 
+# YouTube等のURLから直接（録音もBlackHoleも不要・推奨）
+python3 mac/vtt.py --url "https://youtu.be/AStsuPUxZjI"
+
 # 録音せず既存ファイルを文字起こし
 python3 mac/vtt.py --file movie.mp4
 
 # 主なオプション
 #   --language ja|en|auto   言語（既定 ja、auto で自動判定）
+#   --url URL               YouTube等から音声を取得して文字起こし（要 yt-dlp）
 #   --file PATH             既存の音声/動画ファイルを文字起こし
 ```
 
