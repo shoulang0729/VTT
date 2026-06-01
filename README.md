@@ -4,20 +4,39 @@
 
 ## いちばん簡単な使い方：GUIアプリ（CLI不要）
 
-URL を貼ってボタンを押すだけ。Python標準の Tkinter のみで動く（追加インストール不要）。
+URL を貼るか動画ファイルをドラッグ&ドロップしてボタンを押すだけ。
 
 ![GUIの見た目](docs/gui_mockup.png)
+
+- **入力**: URL を貼る / ファイルを選択 / **ドラッグ&ドロップ**
+- **やること**: 「音声を文字起こし」「スライドをOCR」をチェックで選択（両方可）
+- **実行後**: 「結果プレビュー」タブに文字起こしと slides.md がそのまま表示される
 
 ```bash
 python3 mac/gui.py
 ```
 
-Finder からは `mac/vtt.command` をダブルクリックでも起動できる（初回は右クリック→「開く」）。
-音声の文字起こし／スライドOCR のどちらか・両方をチェックで選び、「▶ 実行」を押すと
-下のログに進捗が流れ、結果ファイルがフォルダに出力される。
+ドラッグ&ドロップを使うには（任意）:
+```bash
+pip install -r requirements.txt   # tkinterdnd2 を入れるとD&Dが有効に（無くても起動はする）
+```
 
-> GUIは下の `vtt.py` / `slides.py` を裏で呼び出すだけのラッパー。CLIで細かく制御したい場合は
-> 以下を直接使う。
+### Macアプリ化（Dock/Launchpadから起動）
+
+普通のMacアプリ `VTT.app` としてビルドできる：
+
+```bash
+bash mac/build_app.sh --install   # VTT.app を作って /Applications にインストール
+```
+
+- Launchpad / Spotlight で「VTT」を検索して起動、Dockにも置ける
+- 出力はホームの `~/VTT_output/` に保存される
+- システムの `python3` を使う軽量バンドル（初回は「右クリック→開く」でGatekeeper許可が要る場合あり）
+- 完全に自己完結（Python同梱）したい場合は `pip install py2app` →
+  `python3 setup.py py2app` 方式も可（必要なら setup.py を用意する）
+
+> GUI/アプリは下の `vtt.py` / `slides.py` を裏で呼び出すだけのラッパー。CLIで細かく制御
+> したい場合は以下を直接使う。
 
 ## mac/ — Mac向け簡易ツール（録音 → 一括文字起こし）
 

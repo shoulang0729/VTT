@@ -1,0 +1,3 @@
+# VTT は外部ツール（ffmpeg / yt-dlp / buzz）を呼び出す設計のため、Python依存は最小。
+# 下記はGUIのドラッグ&ドロップを有効にする「任意」依存（無くてもGUIは起動する）。
+tkinterdnd2>=0.4.0
